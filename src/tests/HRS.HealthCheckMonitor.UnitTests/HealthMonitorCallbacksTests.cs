@@ -27,7 +27,7 @@ namespace HRS.HealthCheckMonitor.UnitTests
             var healthyCount = 0;
             var degradedCount = 0;
             var unhealthyCount = 0;
-            
+
             callbacks.AddCallback("Check1", HealthMonitorStatus.Healthy, (result) => { healthyCount++; return Task.CompletedTask; });
             callbacks.AddCallback("Check2", HealthMonitorStatus.Degraded, (result) => { degradedCount++; return Task.CompletedTask; });
             callbacks.AddCallback("Check3", HealthMonitorStatus.Unhealthy, (result) => { unhealthyCount++; return Task.CompletedTask; });
@@ -103,7 +103,41 @@ namespace HRS.HealthCheckMonitor.UnitTests
             Assert.Equal(0, unhealthyCount);
         }
 
+        [Fact]
+        public async Task TestCallbackStates()
+        {
+            var callbacks = new HealthMonitorCallbacks(_logger);
+            var healthyCount = 0;
+            var degradedCount = 0;
+            var unhealthyCount = 0;
 
+            callbacks.AddCallback("Check1", (x) => {
+                switch (x.Status)
+                {
+                    case HealthMonitorStatus.Unhealthy:
+                        unhealthyCount++;
+                        return Task.CompletedTask;
+                    case HealthMonitorStatus.Degraded:
+                        degradedCount++;
+                        return Task.CompletedTask;
+                    case HealthMonitorStatus.Healthy:
+                        healthyCount++;
+                        return Task.CompletedTask;
+                    case HealthMonitorStatus.NotChecked:
+                    case HealthMonitorStatus.Offline:
+                    default:
+                        return Task.CompletedTask;
+                }
+            });
+
+            await callbacks.ProcessCallbacks(SingleData(HealthMonitorStatus.Healthy));
+            await callbacks.ProcessCallbacks(SingleData(HealthMonitorStatus.Degraded));
+            await callbacks.ProcessCallbacks(SingleData(HealthMonitorStatus.Unhealthy));
+
+            Assert.Equal(1, healthyCount);
+            Assert.Equal(1, degradedCount);
+            Assert.Equal(1, unhealthyCount);
+        }
 
         private HealthMonitorData Data()
         {
@@ -112,6 +146,13 @@ namespace HRS.HealthCheckMonitor.UnitTests
             data.MonitorResults["Check2"].Status = HealthMonitorStatus.Degraded;
             data.MonitorResults["Check3"].Status = HealthMonitorStatus.Unhealthy;
 
+            return data;
+        }
+
+        private HealthMonitorData SingleData(HealthMonitorStatus status)
+        {
+            var data = new HealthMonitorData(SingleOptions());
+            data.MonitorResults["Check1"].Status = status;
             return data;
         }
 
@@ -126,6 +167,21 @@ namespace HRS.HealthCheckMonitor.UnitTests
                     new HealthCheckSetting{ Name = "Check1", Uri = "healthy" },
                     new HealthCheckSetting{ Name = "Check2", Uri = "unhealthy" },
                     new HealthCheckSetting{ Name = "Check3", Uri = "degraded" }
+                }
+            };
+        }
+
+        private HealthCheckMonitorOptions SingleOptions()
+        {
+            return new HealthCheckMonitorOptions
+            {
+                InitialEvaluationDelay = TimeSpan.Zero,
+                EvaluationInterval = TimeSpan.FromHours(5),
+                HealthChecks = new List<HealthCheckSetting>
+                {
+                    new HealthCheckSetting{ Name = "Check1", Uri = "healthy" },
+                    new HealthCheckSetting{ Name = "Check1", Uri = "unhealthy" },
+                    new HealthCheckSetting{ Name = "Check1", Uri = "degraded" }
                 }
             };
         }

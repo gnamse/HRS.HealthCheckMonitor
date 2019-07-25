@@ -200,6 +200,14 @@
             <param name="callback">The callback</param>
             <remarks>If no health check exists with the name, no error is thrown. The callback is just never called</remarks>
         </member>
+        <member name="M:HRS.HealthCheckMonitor.Services.HealthMonitorCallbacks.AddCallback(System.String,System.Func{HRS.HealthCheckMonitor.Data.HealthMonitorResult,System.Threading.Tasks.Task})">
+            <summary>
+            Add a callback for a health check
+            </summary>
+            <param name="healthCheckName">The name of the healthcheck</param>
+            <param name="callback">The callback</param>
+            <remarks>If no health check exists with the name, no error is thrown. The callback is just never called</remarks>
+        </member>
         <member name="M:HRS.HealthCheckMonitor.Services.HealthMonitorCallbacks.RemoveCallback(System.String,HRS.HealthCheckMonitor.Data.HealthMonitorStatus)">
             <summary>
             Removes a callback for a healthcheck

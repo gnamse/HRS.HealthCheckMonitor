@@ -38,6 +38,17 @@ namespace HRS.HealthCheckMonitor.Services
         }
 
         /// <summary>
+        /// Add a callback for a health check
+        /// </summary>
+        /// <param name="healthCheckName">The name of the healthcheck</param>
+        /// <param name="callback">The callback</param>
+        /// <remarks>If no health check exists with the name, no error is thrown. The callback is just never called</remarks>
+        public void AddCallback(string healthCheckName, Func<HealthMonitorResult,Task> callback)
+        {
+            _callbacks.AddOrUpdate(healthCheckName, callback, (k, v) => callback);
+        }
+
+        /// <summary>
         /// Removes a callback for a healthcheck
         /// </summary>
         /// <param name="healthCheckName">The name of the healthcheck the callback is associated with</param>
@@ -57,6 +68,10 @@ namespace HRS.HealthCheckMonitor.Services
                 if(_callbacks.TryGetValue(CallbackName(result.Name, result.Status), out var callback))
                 {
                     callbackTasks.Add(callback(result));
+                }
+                else if (_callbacks.TryGetValue(result.Name, out var callbackWithName))
+                {
+                    callbackTasks.Add(callbackWithName(result));
                 }
             }
             
